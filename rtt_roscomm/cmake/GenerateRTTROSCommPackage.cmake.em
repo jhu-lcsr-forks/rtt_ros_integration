@@ -81,6 +81,11 @@ macro(ros_generate_rtt_typekit package)
     foreach( FILE ${MSGS} )
       # Get just the message name
       string(REGEX REPLACE ".+/\(.+\).msg" "\\1" ROSMSGNAME ${FILE})
+
+      # Resolve relative paths
+      if(NOT IS_ABSOLUTE ${FILE})
+        set(FILE "${${package}_DIR}/../${FILE}")
+      endif()
       
       # Define the typenames for this message
       set(ROSMSGTYPE         "${package}::${ROSMSGNAME}")
