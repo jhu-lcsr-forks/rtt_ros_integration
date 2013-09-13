@@ -208,7 +208,7 @@ endmacro(ros_generate_rtt_typekit)
 macro(ros_generate_rtt_service_proxies package)
   # Check if we're generating code for services in this package
   if(NOT package STREQUAL PROJECT_NAME)
-    find_package(${package})
+    find_package(${package} QUIET)
   endif()
 
   find_package(genmsg)
@@ -238,7 +238,11 @@ macro(ros_generate_rtt_service_proxies package)
       file(GLOB SRV_FILES "${${package}_PACKAGE_PATH}/srv/*.srv")
       set(${package}_EXPORTED_TARGETS)
     endif()
+  else()
+    message(SEND_ERROR "Package ${package} not found. Will not generate RTT service proxy.")
+    set(SRV_FILES)
   endif()
+
   
   if ( NOT "${SRV_FILES}" STREQUAL "" )
 
@@ -274,7 +278,9 @@ macro(ros_generate_rtt_service_proxies package)
 
     orocos_service(         rtt_${ROSPACKAGE}_ros_service_proxies ${_template_proxies_dst_dir}/rtt_ros_service_proxies.cpp)
     target_link_libraries(  rtt_${ROSPACKAGE}_ros_service_proxies ${catkin_LIBRARIES})
-    add_dependencies(       rtt_${ROSPACKAGE}_ros_service_proxies ${${package}_EXPORTED_TARGETS})
+    if(DEFINED ${package}_EXPORTED_TARGETS)
+      add_dependencies(       rtt_${ROSPACKAGE}_ros_service_proxies ${${package}_EXPORTED_TARGETS})
+    endif()
     add_file_dependencies(  ${_template_proxies_dst_dir}/rtt_ros_service_proxies.cpp "${CMAKE_CURRENT_LIST_FILE}")
 
     set_directory_properties(PROPERTIES 
