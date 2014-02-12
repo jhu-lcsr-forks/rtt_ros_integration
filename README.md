@@ -26,6 +26,8 @@ The packages in this repository provide:
   plugin for publishing and subscribing to ROS topics as well as calling and
   responding to ROS services.
 * [**rtt\_rospack**](rtt_rospack) Plugin for locating ROS resources.
+* [**rtt\_tf**](rtt_tf) RTT-Plugin which uses [tf](http://ros.org/wiki/tf) to
+  allow RTT components to lookup and publish transforms.
 * [**rtt\_actionlib**](rtt_actionlib) RTT-Enabled
   [actionlib](http://ros.org/wiki/actionlib) action server for providing
   actions from ROS-integrated RTT components.
@@ -33,23 +35,19 @@ The packages in this repository provide:
   [metapackage](http://ros.org/wiki/catkin/package.xml#Metapackages) for this
   repository.
 
-See each package's README.md file for more information.
-
-The following packages are in the planning stages:
-
-* [**rtt\_rostime**](rtt_rostime) Plugin for basing RTT time off of ROS sim
-  time.
-* [**rtt\_rosops**](rtt_rosops) Plugin for executing Orocos Ops script via ROS
-  service call.
-* [**rtt\_dynamic_reconfigure**](rtt_dynamic_reconfigure) Plugin for running
-  a [dynamic\_reconfigure](http://ros.org/wiki/dynamic_reconfigure) server from
-  an RTT component.
+***See each package's README.md file for more information.***
 
 ## Usage
 
 For numerous examples of usage, see the
 [**rtt\_ros\_examples**](http://github.com/jhu-lcsr/rtt_ros_examples)
 stack.
+
+### Installing Orocos From Binary Packages
+
+The Orocos toolchain and the rtt_ros_integration packages are available as 
+binary packages hosted by the Open Source Robotics Foundation (OSRF) and can be
+installed on supported operating systems.
 
 ### Building Orocos From Source
 
@@ -63,7 +61,7 @@ Orocos:
 export OROCOS_TARGET=gnulinux
 mkdir -p ~/ws/underlay_isolated/src/orocos
 cd ~/ws/underlay_isolated
-git clone --recursive git://gitorious.org/orocos-toolchain/orocos_toolchain.git src/orocos/orocos_toolchain
+git clone --recursive git://gitorious.org/orocos-toolchain/orocos_toolchain.git -b toolchain-2.7 src/orocos/orocos_toolchain
 catkin_make_isolated --install
 source install/setup.sh
 ```
@@ -72,13 +70,118 @@ Then, in the same shell, create an underlay for building Catkin-based packages:
 ```shell
 mkdir -p ~/ws/underlay/src
 cd ~/ws/underlay
-git clone git@github.com:jhu_lcsr_forks/rtt_ros_integration.git src/rtt_ros_integration
+git clone https://github.com/orocos/rtt_ros_integration.git src/rtt_ros_integration
 catkin_make
 source devel/setup.sh
 ```
 
 At this point you can create Catkin or rosbuild packages which use the
 rtt\_ros\_integration tools.
+
+### Creating an Orocos-ROS Package
+
+The Orocos and ROS communities have both standardized on using CMake for building source code, and have also both developed independent CMake macros for assisting the process. The ROS community has developed [catkin](http://github.com/ros/catkin) and the Orocos toolchain uses Orocos-specific macros. These macros are used for exporting (declaring) and retreiving inter-package dependencies. It's a good, conflict-preventing, practice to decide when a package should be characterized by Catkin-based or Orocos-based macros.
+
+Any package that builds orocos targets (plugins, components, executables, etc) _needs_to call the `orocos_generate_package()` macro so that the appropriate platform-specific pkg-config .pc files are generated. These packages can _depend_ on ROS libraries, but they should avoid _exporting_ headers, libraries, or other resources via the `catkin_package()` macro.
+
+A simple Orocos-ROS package looks like the following:
+
+```
+my_orocos_pkg
+├── README.md
+├── CMakeLists.txt
+├── package.xml
+├── include
+│   └── my_orocos_pkg
+└── src
+```
+
+Where the CMakeLists.txt has the following directives:
+
+```cmake
+cmake_minimum_required(VERSION 2.8.3)
+project(my_orocos_pkg)
+
+### ROS Dependencies ###
+# Find the RTT-ROS package (this transitively includes the Orocos CMake macros)
+find_package(catkin REQUIRED COMPONENTS
+  rtt_ros
+  # ADDITIONAL ROS PACKAGES
+  )
+
+include_directories(${catkin_INCLUDE_DIRS})
+
+### Orocos Dependencies ###
+# Note that orocos_use_package() does not need to be called for any dependency
+# listed in the package.xml file
+
+include_directories(${USE_OROCOS_INCLUDE_DIRS})
+
+### Orocos Targets ###
+
+# orocos_component(my_component src/my_component.cpp)
+# target_link_libraries(my_component ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
+# orocos_library(my_library src/my_library.cpp)
+# target_link_libraries(my_library ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
+# orocos_service(my_service src/my_service.cpp)
+# target_link_libraries(my_service ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
+# orocos_plugin(my_plugin src/my_plugin.cpp)
+# target_link_libraries(my_plugin ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
+# orocos_typekit(my_typekit src/my_typekit.cpp)
+# target_link_libraries(my_typekit ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
+
+### Orocos Package Exports and Install Targets ###
+
+# Generate install targets for header files
+
+orocos_install_headers(DIRECTORY include/${PROJECT_NAME})
+
+# Export package information (replaces catkin_package() macro) 
+orocos_generate_package(
+  INCLUDE_DIRS include
+  DEPENDS rtt_ros
+)
+```
+
+The package.xml file is a normal Catkin package.xml file, with some additional export flags for ROS plugin auto-loading:
+
+```xml
+<package>
+  <name>my_orocos_package</name>
+  <version>0.1.0</version>
+  <license>BSD</license>
+  <maintainer email="name@domain.com">Firstname Lastname</maintainer>
+  <description>
+    Package description.
+  </description>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Build deps are queried automatically with orocos_use_package() -->
+  <build_depend>rtt</build_depend>
+  <build_depend>ocl</build_depend>
+  <build_depend>rtt_ros</build_depend>
+
+  <run_depend>rtt</run_depend>
+  <run_depend>ocl</run_depend>
+  <run_depend>rtt_ros</run_depend>
+
+  <!-- ROS Msg Typekits and Srv Proxies -->
+  <build_depend>rtt_sensor_msgs</build_depend>
+  <run_depend>rtt_sensor_msgs</run_depend>
+
+  <export>
+    <rtt_ros>
+      <!-- Plugin deps are loaded automatically by the rtt_ros import service -->
+      <plugin_depend>rtt_sensor_msgs</plugin_depend>
+    </rtt_ros>
+  </export>
+</package>
+```
 
 ### Building ROS-Based Orocos Components
 
@@ -94,22 +197,36 @@ versions of the same library in place without having to rebuild everything
 whenever you change targets.
 
 So in order to build Orocos components in a rosbuild or Catkin package, you need
-to first include the RTT use-file:
+to first include the RTT CMake macros. This is done automatically when you find
+the `rtt_ros` package:
 
 ```cmake
-find_package(OROCOS-RTT REQUIRED ...)
-include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake)
+find_package(catkin REQUIRED COMPONENTS rtt_ros)
+```
+
+If you need other RTT libraries like the CORBA transport etc, you can use the
+`use_orocos()` macro provided by the `rtt_ros` package:
+
+```cmake
+use_orocos(rtt-transport-corba)
+```
+
+The above is equivalent to calling the following:
+
+```cmake
+find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
+include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 ```
 
 When this file is included, it both defines and executes several macros.
 Specifically, it parses the package.xml or manifest.xml of the including
-package, and executes `orocos_find_package(pkg-name)` on all build dependencies.
-This populates several variables includeing, but not limited to
+package, and executes `orocos_use_package(pkg-name)` on all build dependencies.
+This populates several variables including, but not limited to
 `${OROCOS_USE_INCLUDE_DIRS}` and  `${OROCOS_USE_LIBRARIES}` which are used by
 Orocos target- and package-definition macros like `orocos_executable()`,
 `orocos_library()` and `orocos_generate_package()`.
 
-Also, while the `orocos_find_package()` macro can be used to find both
+Also, while the `orocos_use_package()` macro can be used to find both
 Orocos-based packages and normal pkg-config-based packages, you should only use
 it for Orocos-based packages. You should use the normal CMake and Catkin
 mechanisms for all non-Orocos dependencies. As long as the names of orocos
@@ -120,7 +237,7 @@ ordering.
 
 To build components, libraries, typekits, and other Orocos plugins, use the
 standard `orocos_*()` CMake macros. Then to make these available to other
-packages at build-time (through `orocos_find_package()`), declare an Orocos
+packages at build-time (through `orocos_use_package()`), declare an Orocos
 package at the end of your CMakeLists.txt file:
 
 ```cmake
@@ -171,8 +288,8 @@ the README in the [rtt_ros](rtt_ros) package.
 ### Bulding ROS-Based Orocos Plugins
 
 Orocos plugins are built normally, with Orocos CMake macros. See
-[rtt_ros_integration_example](rtt_ros_integration_example/CMakeLists.txt) for 
-an example.
+[rtt_actionlib](rtt_actionlib/CMakeLists.txt) for 
+an example of an Orocos RTT service plugin.
 
 ### Running Orocos Programs
 
@@ -198,4 +315,18 @@ respectively. See [rtt_roscomm](rtt_roscomm) for more information.
 The `rtt_actionlib` package provides a C++ API and an RTT service for
 implementing [actionlib](http://www.ros.org/wiki/actionlib) actions with Orocos
 RTT components. See [rtt_actionlib](rtt_actionlib) for more information.
+
+
+## Future Work
+
+The following packages are in the planning stages, please contact the
+maintainers if you're interested in using or contributing to them:
+
+* [**rtt\_rostime**](rtt_rostime) Plugin for basing RTT time off of ROS sim
+  time.
+* [**rtt\_rosops**](rtt_rosops) Plugin for executing Orocos Ops script via ROS
+  service call.
+* [**rtt\_dynamic_reconfigure**](rtt_dynamic_reconfigure) Plugin for running
+  a [dynamic\_reconfigure](http://ros.org/wiki/dynamic_reconfigure) server from
+  an RTT component.
 
