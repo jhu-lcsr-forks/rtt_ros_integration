@@ -30,6 +30,8 @@ namespace rtt_actionlib {
       server_(server) 
     { }
 
+    virtual ~RTTActionServerStatusTimer() { }
+
     //! Publish the action server status
     virtual void timeout(RTT::os::Timer::TimerId timer_id) {
       server_.publishStatus();
