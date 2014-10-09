@@ -10,9 +10,15 @@ catkin_package(
   CFG_EXTRAS rtt_ros-extras.cmake
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${LIBXML2_INCLUDE_DIR})
-
 add_definitions(-DRTT_COMPONENT)
+orocos_use_package(ocl-logging)
+orocos_use_package(ocl-deployment)
+orocos_use_package( ocl-taskbrowser )
+
+include_directories(include 
+  ${catkin_INCLUDE_DIRS}
+  ${LIBXML2_INCLUDE_DIR}
+  ${USE_OROCOS_INCLUDE_DIRS})
 
 orocos_library(rtt_ros src/rtt_ros.cpp)
 target_link_libraries(rtt_ros
@@ -25,6 +31,8 @@ target_link_libraries(rtt_ros_service
   rtt_ros
   ${catkin_LIBRARIES} 
   )
+
+orocos_executable(ldeployer src/ldeployer.cpp)
 
 # ROS Primitives typekit
 set(CMAKE_BUILD_TYPE MinSizeRel)

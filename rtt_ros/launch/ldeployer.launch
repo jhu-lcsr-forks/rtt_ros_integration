@@ -1,0 +1,20 @@
+<launch>
+  <!-- The node name for the deployer -->
+  <arg name="NAME" default="$(anon ldeployer)"/>
+  <!-- Additional Orocos deployer args -->
+  <arg name="LUA_SCRIPTS" default=""/>
+  <!-- Orocos target (gnulinux, xenomai, etc) -->
+  <arg name="OROCOS_TARGET" default="$(optenv OROCOS_TARGET)"/>
+  <!-- Path to look for dynamically-loaded plugins and components (something like /lib/orocos) -->
+  <arg name="RTT_COMPONENT_PATH" default="$(env RTT_COMPONENT_PATH)"/>
+
+  <!-- Launch deployer -->
+  <node 
+    name="$(arg NAME)"
+    pkg="rtt_ros" type="ldeployer-$(arg OROCOS_TARGET)" 
+    args="$(arg LUA_SCRIPTS) --"
+    output="screen">
+    <env name="OROCOS_TARGET" value="$(arg OROCOS_TARGET)"/>
+    <env name="RTT_COMPONENT_PATH" value="$(arg RTT_COMPONENT_PATH)"/>
+  </node>
+</launch>

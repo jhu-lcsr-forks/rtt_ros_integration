@@ -31,6 +31,20 @@ void loadROSService(){
   ros->addOperation("import", &rtt_ros::import).doc(
       "Imports the Orocos plugins from a given ROS package (if found) along with the plugins of all of the package's run or exec dependencies as listed in the package.xml.").arg(
           "package", "The ROS package name.");
+  
+  // Namespace control
+#if 0
+  ros->addOperation("setNS", &rtt_ros::setNS).doc(
+      "Set the global namespace for all namespaced ROS operations").
+    arg("ns", "The new namespace.");
+
+  ros->addOperation("pushNS", &rtt_ros::pushNS).doc(
+      "Append to the global namespace for all namespaced ROS operations").
+    arg("ns", "The new sub-namespace.");
+
+  ros->addOperation("popNS", &rtt_ros::popNS).doc(
+      "Remove the last namespace extension which was pushed.");
+#endif
 }
 
 using namespace RTT;
