@@ -1,18 +1,26 @@
 <launch>
   <!-- The node name for the deployer -->
   <arg name="NAME" default="$(anon ldeployer)"/>
+  <!-- Orocos log level (never, fatal, critical, error, warning, info, debug, realtime) -->
+  <arg name="LOG_LEVEL" default="info"/>
   <!-- Additional Orocos deployer args -->
-  <arg name="LUA_SCRIPTS" default=""/>
+  <arg name="DEPLOYER_ARGS" default=""/>
   <!-- Orocos target (gnulinux, xenomai, etc) -->
   <arg name="OROCOS_TARGET" default="$(optenv OROCOS_TARGET)"/>
   <!-- Path to look for dynamically-loaded plugins and components (something like /lib/orocos) -->
   <arg name="RTT_COMPONENT_PATH" default="$(env RTT_COMPONENT_PATH)"/>
 
+  <!-- Set DEBUG to true to run in GDB (don't forget to build in Debug mode) -->
+  <arg name="DEBUG" default="false"/>
+  <arg if="$(arg DEBUG)" name="LAUNCH_PREFIX" value="gdb -ex run --args"/>
+  <arg unless="$(arg DEBUG)" name="LAUNCH_PREFIX" value=""/>
+
   <!-- Launch deployer -->
-  <node 
+  <node
     name="$(arg NAME)"
-    pkg="rtt_ros" type="ldeployer-$(arg OROCOS_TARGET)" 
-    args="$(arg LUA_SCRIPTS) --"
+    pkg="rtt_ros" type="ldeployer-$(arg OROCOS_TARGET)"
+    args="-l $(arg LOG_LEVEL) $(arg DEPLOYER_ARGS) --"
+    launch-prefix="$(arg LAUNCH_PREFIX)"
     output="screen">
     <env name="OROCOS_TARGET" value="$(arg OROCOS_TARGET)"/>
     <env name="RTT_COMPONENT_PATH" value="$(arg RTT_COMPONENT_PATH)"/>

@@ -16,9 +16,9 @@
   <arg unless="$(arg DEBUG)" name="SUFFIX" value=""/>
 
   <!-- Launch deployer -->
-  <node 
+  <node
     name="$(arg NAME)"
-    pkg="rtt_ros" type="deployer$(arg SUFFIX)" 
+    pkg="rtt_ros" type="deployer$(arg SUFFIX)"
     args="-l $(arg LOG_LEVEL) $(arg DEPLOYER_ARGS) --"
     output="screen">
     <env name="OROCOS_TARGET" value="$(arg OROCOS_TARGET)"/>

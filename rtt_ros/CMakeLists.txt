@@ -3,6 +3,7 @@ project(rtt_ros)
 
 find_package(catkin REQUIRED COMPONENTS rostime rospack roslib)
 find_package(LibXml2 REQUIRED)
+find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OROCOS-RTT REQUIRED)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake)
 
@@ -18,7 +19,8 @@ orocos_use_package( ocl-taskbrowser )
 include_directories(include 
   ${catkin_INCLUDE_DIRS}
   ${LIBXML2_INCLUDE_DIR}
-  ${USE_OROCOS_INCLUDE_DIRS})
+  ${USE_OROCOS_INCLUDE_DIRS},
+  ${Boost_INCLUDE_DIRS})
 
 orocos_library(rtt_ros src/rtt_ros.cpp)
 target_link_libraries(rtt_ros
@@ -33,6 +35,7 @@ target_link_libraries(rtt_ros_service
   )
 
 orocos_executable(ldeployer src/ldeployer.cpp)
+target_link_libraries(ldeployer ${Boost_LIBRARIES})
 
 # ROS Primitives typekit
 set(CMAKE_BUILD_TYPE MinSizeRel)
