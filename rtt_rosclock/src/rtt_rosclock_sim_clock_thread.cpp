@@ -85,7 +85,7 @@ namespace {
   RTT::os::CleanupFunction cleanup(&SimClockThread::Release);
 }
 
-SimClockThread::SimClockThread() 
+SimClockThread::SimClockThread()
   : RTT::os::Thread(ORO_SCHED_OTHER, RTT::os::LowestPriority, 0.0, 0, "rtt_rosclock_SimClockThread")
   , time_service_(RTT::os::TimeService::Instance())
   , clock_source_(SIM_CLOCK_SOURCE_MANUAL)
@@ -98,7 +98,7 @@ SimClockThread::~SimClockThread()
   this->stop();
 }
 
-bool SimClockThread::setClockSource(SimClockSource clock_source) 
+bool SimClockThread::setClockSource(SimClockSource clock_source)
 {
   // Don't allow changing the source while running
   if(this->isActive()) {
@@ -106,24 +106,24 @@ bool SimClockThread::setClockSource(SimClockSource clock_source)
     return false;
   }
 
-  // Set the clock source 
+  // Set the clock source
   clock_source_ = clock_source;
 
   return true;
 }
 
-bool SimClockThread::useROSClockTopic() 
+bool SimClockThread::useROSClockTopic()
 {
   return this->setClockSource(SIM_CLOCK_SOURCE_ROS_CLOCK_TOPIC);
 }
 
-bool SimClockThread::useManualClock() 
+bool SimClockThread::useManualClock()
 {
   return this->setClockSource(SIM_CLOCK_SOURCE_MANUAL);
 }
 
-bool SimClockThread::simTimeEnabled() const 
-{ 
+bool SimClockThread::simTimeEnabled() const
+{
   return this->isActive();
 }
 
@@ -152,7 +152,7 @@ bool SimClockThread::updateClockInternal(const ros::Time new_time)
 
   // Check if time restarted
   if(new_time.isZero()) {
-    
+
     RTT::log(RTT::Warning) << "Time has reset to 0! Re-setting time service..." << RTT::endlog();
 
     // Re-set the time service and don't update the activities
@@ -216,7 +216,7 @@ bool SimClockThread::initialize()
 
   RTT::log(RTT::Debug) << "[rtt_rosclock] Attempting to enable global simulation clock source..." << RTT::endlog();
 
-  switch(clock_source_) 
+  switch(clock_source_)
   {
     case SIM_CLOCK_SOURCE_ROS_CLOCK_TOPIC:
       {
@@ -272,7 +272,7 @@ void SimClockThread::loop()
 {
   static const ros::WallDuration timeout(0.1);
 
-  // Service callbacks while 
+  // Service callbacks while
   while(process_callbacks_) {
     callback_queue_.callAvailable(timeout);
   }
@@ -296,7 +296,7 @@ void SimClockThread::finalize()
 
   // Re-enable system clock
   time_service_->enableSystemClock(true);
-  
+
   // Restart the RTT Logger with reference walltime
   RTT::Logger::Instance()->startup();
 }

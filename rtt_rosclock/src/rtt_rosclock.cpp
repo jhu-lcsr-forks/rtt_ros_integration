@@ -12,8 +12,9 @@ namespace rtt_rosclock {
 
 const ros::Time rtt_rosclock::host_now()
 {
-  if(SimClockThread::GetInstance() && SimClockThread::GetInstance()->simTimeEnabled()) {
-    return rtt_now();   
+  boost::shared_ptr<SimClockThread> instance = SimClockThread::GetInstance();
+  if(instance && instance->simTimeEnabled()) {
+    return rtt_now();
   }
 
   #ifdef __XENO__
@@ -26,12 +27,12 @@ const ros::Time rtt_rosclock::host_now()
     }
 
     return ros::Time(ts.tv_sec, ts.tv_nsec);
-  #else 
+  #else
     return ros::Time::now();
   #endif
 }
 
-const ros::Time rtt_rosclock::host_wall_now() 
+const ros::Time rtt_rosclock::host_wall_now()
 {
   #ifdef __XENO__
     // Use Xenomai 2.6 feature to get the NTP-synched real-time clock
@@ -43,13 +44,13 @@ const ros::Time rtt_rosclock::host_wall_now()
     }
 
     return ros::Time(ts.tv_sec, ts.tv_nsec);
-  #else 
+  #else
     ros::WallTime now(ros::WallTime::now());
     return ros::Time(now.sec, now.nsec);
   #endif
 }
 
-const ros::Time rtt_rosclock::rtt_now() 
+const ros::Time rtt_rosclock::rtt_now()
 {
   // count the zeros...   -987654321--
   const uint64_t one_E9 = 1000000000ULL;
@@ -76,7 +77,7 @@ const ros::Time rtt_rosclock::rtt_wall_now()
   return ros::Time(sec64_part, nsec64_part);
 }
 
-const RTT::Seconds rtt_rosclock::host_offset_from_rtt() 
+const RTT::Seconds rtt_rosclock::host_offset_from_rtt()
 {
   return (rtt_rosclock::host_wall_now() - rtt_rosclock::rtt_wall_now()).toSec();
 }
@@ -102,7 +103,7 @@ const bool rtt_rosclock::enable_sim()
   return SimClockThread::Instance()->start();
 }
 
-const bool rtt_rosclock::disable_sim() 
+const bool rtt_rosclock::disable_sim()
 {
   return SimClockThread::Instance()->stop();
 }
