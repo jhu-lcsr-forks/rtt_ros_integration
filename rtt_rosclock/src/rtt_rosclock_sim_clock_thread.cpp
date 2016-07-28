@@ -169,7 +169,11 @@ bool SimClockThread::updateClockInternal(const ros::Time new_time)
 
     // Check if time went backwards
     if(dt < 0) {
-      RTT::log(RTT::Warning) << "Time went backwards by " << dt << " seconds! (" << rtt_rosclock::rtt_now() << " --> " << new_time <<")" << RTT::endlog();
+      if(dt >= -1.0) {
+        dt += 1.0;
+      } else {
+        RTT::log(RTT::Warning) << "Time went backwards by " << dt << " seconds! (" << rtt_rosclock::rtt_now() << " --> " << new_time <<")" << RTT::endlog();
+      }
     }
 
     // Update the RTT clock
